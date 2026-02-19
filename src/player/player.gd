@@ -3,14 +3,20 @@ extends CharacterBody3D
 @onready var pitchNode: Node3D = $gravityControl/yawAxis/pitchAxis
 @onready var yawNode: Node3D   = $gravityControl/yawAxis
 @onready var rigRoot: Node3D   = $gravityControl
+@onready var cam := $gravityControl/yawAxis/pitchAxis/Camera3D
 @onready var down_probe := $ShapeCast3D
+@onready var hud := $hud
+@onready var wallIndicator := $hud/wallIndicator
+@onready var trueGroundIndicator := $hud/trueGroundIndicator
 
-@export var rig_reorient_rate := 7.0
+@export var arrow_texture_points_up := true  # set true if your arrow image points "up" by default
+
+@export var rig_reorient_rate := 10.0
 @export var speed := 15.0
-@export var gravity_strength := 90.0          # freefall accel (along -current_up)
-@export var stick_strength := 45.0            # while attached, presses into surface (along -current_up)
-@export var max_stick_speed := 15.0           # caps “into wall” speed magnitude
-@export var jump_speed := 30.0                # along +current_up
+@export var gravity_strength := 90.0 #how strong regular game gravity is
+@export var stick_strength := 90.0 # while attached, presses into surface (along -current_up) (doesnt affect much, but should be greater than 10
+@export var max_stick_speed := 50.0 # (matters a lot, dictates how sticky you are to a wall )
+@export var jump_speed := 30.0 # jump height defined along the current_up (so u jump from a wall upwards)
 @export var mouse_sens := 0.001
 @export var attach_range := 2.5
 @export var pitch_limit := deg_to_rad(85.0)
@@ -51,6 +57,7 @@ func _physics_process(delta: float) -> void:
 
 	_update_camera_rig(delta)
 	_update_player_vel(delta)
+
 
 	# 3) Move
 	move_and_slide()
@@ -95,6 +102,8 @@ func _physics_process(delta: float) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		else:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+	_update_hud_arrows()
 
 
 
@@ -219,14 +228,6 @@ func _update_player_vel(delta: float) -> void:
 
 
 func _sample_support_normal() -> Vector3:
-	# Place probe slightly above the body along current_up
-	#down_probe.global_position = global_position + current_up * support_offset
-
-	# Make probe's local -Y line up with your gravity frame
-	#down_probe.global_transform.basis = rigRoot.global_transform.basis.orthonormalized()
-
-	# Cast down in the probe's local space
-	#down_probe.target_position = Vector3.DOWN * support_len
 	down_probe.force_shapecast_update()
 
 	var best_n := Vector3.ZERO
@@ -239,3 +240,51 @@ func _sample_support_normal() -> Vector3:
 			best_n = n
 
 	return best_n
+
+
+
+func _arrow_angle_from_world_dir(cam: Camera3D, world_dir: Vector3) -> float:
+	var v_cam := world_dir.normalized() * cam.global_transform.basis
+	if v_cam.z > 0.0:
+		v_cam = -v_cam
+	var dir2 := Vector2(v_cam.x, -v_cam.y)
+	if dir2.length() < 0.001:
+		return 999999.0
+	return dir2.normalized().angle()
+
+
+
+func _update_hud_arrows() -> void:
+	var offset := -PI/2 if arrow_texture_points_up else 0.0
+
+	# Ground arrow
+	var a_ground := _screen_arrow_angle(cam, Vector3.DOWN)
+	if a_ground > 100000.0:
+		trueGroundIndicator.visible = false
+	else:
+		trueGroundIndicator.visible = true
+		trueGroundIndicator.rotation = a_ground + offset
+
+	var a_stick := _screen_arrow_angle(cam, -current_up)
+	if attached and a_stick <= 100000.0:
+		wallIndicator.visible = true
+		wallIndicator.rotation = a_stick + offset
+	else:
+		wallIndicator.visible = false
+
+
+
+func _screen_arrow_angle(cam: Camera3D, world_dir: Vector3) -> float:
+	var d := world_dir.normalized()
+	var right := cam.global_transform.basis.x
+	var up    := cam.global_transform.basis.y
+	var fwd   := -cam.global_transform.basis.z  # camera forward
+
+	var d_proj := d - fwd * d.dot(fwd)
+
+	if d_proj.length() < 0.001:
+		return INF
+	var x := d_proj.dot(right)
+	var y := d_proj.dot(up)
+
+	return Vector2(x, -y).angle()

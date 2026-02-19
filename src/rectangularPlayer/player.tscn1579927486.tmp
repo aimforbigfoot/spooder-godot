@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://dgw74vsie3qck"]
+
+[ext_resource type="Script" uid="uid://dfuw5soldv2op" path="res://src/palyer/player.gd" id="1_ocv17"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_5wqtk"]
+radius = 1.0
+
+[node name="player" type="CharacterBody3D" unique_id=1256135889]
+script = ExtResource("1_ocv17")
+rig_reorient_rate = null
+speed = null
+gravity_strength = null
+stick_strength = null
+max_stick_speed = null
+jump_speed = null
+mouse_sens = null
+attach_range = null
+pitch_limit = null
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=206197205]
+transform = Transform3D(0.9998321, 0.01832493, 0, -0.01832493, 0.9998321, 0, 0, 0, 1, 0, 0, 0)
+shape = SubResource("SphereShape3D_5wqtk")
+
+[node name="gravityControl" type="Node3D" parent="." unique_id=1950351932]
+
+[node name="yawAxis" type="Node3D" parent="gravityControl" unique_id=312281462]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6782839, -0.010904729)
+
+[node name="pitchAxis" type="Node3D" parent="gravityControl/yawAxis" unique_id=1714939760]
+
+[node name="Camera3D" type="Camera3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=1295936674]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.016861975, -0.16873138)

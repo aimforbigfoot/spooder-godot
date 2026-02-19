@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://dgw74vsie3qck"]
+
+[ext_resource type="Script" uid="uid://dfuw5soldv2op" path="res://src/player/player.gd" id="1_ocv17"]
+[ext_resource type="Texture2D" uid="uid://3gflarj114ky" path="res://assets/lilTriangle.png" id="2_luur7"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_5wqtk"]
+radius = 0.7
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_rxibo"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ocv17"]
+radius = 1.5
+
+[node name="player" type="CharacterBody3D" unique_id=1256135889]
+script = ExtResource("1_ocv17")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=206197205]
+transform = Transform3D(0.9998321, 0.01832493, 0, -0.01832493, 0.9998321, 0, 0, 0, 1, 0, 0, 0)
+shape = SubResource("SphereShape3D_5wqtk")
+
+[node name="gravityControl" type="Node3D" parent="." unique_id=1950351932]
+
+[node name="yawAxis" type="Node3D" parent="gravityControl" unique_id=312281462]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50732166, -0.010904729)
+
+[node name="pitchAxis" type="Node3D" parent="gravityControl/yawAxis" unique_id=1714939760]
+
+[node name="Camera3D" type="Camera3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=1295936674]
+attributes = SubResource("CameraAttributesPractical_rxibo")
+current = true
+
+[node name="ShapeCast3D" type="ShapeCast3D" parent="." unique_id=1247176348]
+shape = SubResource("SphereShape3D_ocv17")
+target_position = Vector3(0, 0, 0)
+max_results = 2
+
+[node name="hud" type="CanvasLayer" parent="." unique_id=1258121793]
+
+[node name="wallIndicator" type="Sprite2D" parent="hud" unique_id=1274236181]
+modulate = Color(1, 0, 1, 1)
+position = Vector2(640, 328)
+rotation = 3.1415927
+scale = Vector2(0.36393684, 0.15787789)
+texture = ExtResource("2_luur7")
+offset = Vector2(0, -33.915)
+
+[node name="trueGroundIndicator" type="Sprite2D" parent="hud" unique_id=1159931306]
+modulate = Color(0, 1, 1, 1)
+position = Vector2(640, 352)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_luur7")
+
+[node name="Label" type="Label" parent="hud" unique_id=1278713410]
+offset_right = 133.0
+offset_bottom = 56.0
+text = "Text for hud"
