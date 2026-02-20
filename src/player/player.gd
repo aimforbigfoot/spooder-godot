@@ -21,13 +21,13 @@ class_name Player
 @export var speed := 15.0
 @export var gravityStrength := 90.0
 @export var stickStrength := 90.0
-@export var maxStickSpeed := 500.0
-@export var jumpSpeed := 30.0
+@export var maxStickSpeed := 50.0
+@export var jumpSpeed := 60.0
 @export var mouseSens := 0.001
 @export var attachRange := 2.5
 @export var pitchLimit := deg_to_rad(85.0)
 @export var autoAttach := true
-@export var attachWallDot := 0.5
+@export var attachWallDot := 0.8
 @export var faceDot := 0.8 # this big value means (closer to 1 = floor becomes wall) at 0.8 a 20 deg slope becomes a wall
 @export var detachGrace := 0.10
 @export var supportNormalSmoothStep := 25.0     # bigger = snaps faster, smaller = smoother
