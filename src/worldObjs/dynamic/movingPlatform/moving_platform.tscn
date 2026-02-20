@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://bjknx8fnw0f7o"]
+
+[ext_resource type="Script" uid="uid://cwjqq74pbenfh" path="res://src/worldObjs/dynamic/movingPlatform/moving_platform.gd" id="1_nvylv"]
+[ext_resource type="Texture2D" uid="uid://b2oasnu7wg1ku" path="res://assets/texture_10.png" id="1_vf4mc"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_nvylv"]
+size = Vector3(5, 5, 10)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dgudy"]
+albedo_texture = ExtResource("1_vf4mc")
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_qgg01"]
+material = SubResource("StandardMaterial3D_dgudy")
+size = Vector3(5, 5, 10)
+
+[node name="movingPlatform" type="Node3D" unique_id=1434355967]
+script = ExtResource("1_nvylv")
+
+[node name="AnimatableBody3D" type="AnimatableBody3D" parent="." unique_id=953270121]
+sync_to_physics = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="AnimatableBody3D" unique_id=1688150476]
+shape = SubResource("BoxShape3D_nvylv")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="AnimatableBody3D" unique_id=1941395077]
+mesh = SubResource("BoxMesh_qgg01")
