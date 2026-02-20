@@ -34,7 +34,7 @@ current = true
 [node name="ShapeCast3D" type="ShapeCast3D" parent="." unique_id=1247176348]
 shape = SubResource("SphereShape3D_ocv17")
 target_position = Vector3(0, 0, 0)
-max_results = 5
+max_results = 6
 
 [node name="hud" type="CanvasLayer" parent="." unique_id=1258121793]
 
