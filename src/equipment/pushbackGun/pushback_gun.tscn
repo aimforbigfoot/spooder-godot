@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://dljd5moqdoiw2"]
+
+[ext_resource type="Script" uid="uid://cv6m1iwyqhg8q" path="res://src/equipment/pushbackGun/pushback_gun.gd" id="1_05eu8"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_n68m2"]
+size = Vector3(0.1, 0.1, 0.2)
+
+[node name="pushbackGun" type="Node3D" unique_id=1197236099]
+script = ExtResource("1_05eu8")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=552049695]
+mesh = SubResource("BoxMesh_n68m2")

@@ -2,13 +2,17 @@
 
 [ext_resource type="Script" uid="uid://dfuw5soldv2op" path="res://src/player/player.gd" id="1_ocv17"]
 [ext_resource type="Texture2D" uid="uid://3gflarj114ky" path="res://assets/lilTriangle.png" id="2_luur7"]
-[ext_resource type="Script" uid="uid://bvsffj61cut27" path="res://src/player/movement_controller.gd" id="3_mf2ua"]
-[ext_resource type="Script" uid="uid://bpk8jb2kd2tju" path="res://src/player/gravity_controller.gd" id="4_244u8"]
+[ext_resource type="Script" uid="uid://bvsffj61cut27" path="res://src/player/controllers/movement_controller.gd" id="3_mf2ua"]
+[ext_resource type="Script" uid="uid://bpk8jb2kd2tju" path="res://src/player/controllers/gravity_controller.gd" id="4_244u8"]
+[ext_resource type="Script" uid="uid://birf6yfalehau" path="res://src/player/controllers/equipment_manager.gd" id="5_5f2sf"]
+[ext_resource type="PackedScene" uid="uid://dljd5moqdoiw2" path="res://src/equipment/pushbackGun/pushback_gun.tscn" id="6_jiejy"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_5wqtk"]
 radius = 0.7
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_rxibo"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_244u8"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_ocv17"]
 radius = 1.5
@@ -30,6 +34,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5624272, 0)
 [node name="Camera3D" type="Camera3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=1295936674]
 attributes = SubResource("CameraAttributesPractical_rxibo")
 current = true
+
+[node name="handSocket" type="Node3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=2094515691]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="gravityControl/yawAxis/pitchAxis/handSocket" unique_id=1546238678]
+transform = Transform3D(0.2345118, 0, 0, 0, 0.14221638, 0, 0, 0, 0.19706333, 0.47887957, -0.3177613, -0.4564395)
+mesh = SubResource("CylinderMesh_244u8")
 
 [node name="ShapeCast3D" type="ShapeCast3D" parent="." unique_id=1247176348]
 shape = SubResource("SphereShape3D_ocv17")
@@ -64,3 +74,7 @@ script = ExtResource("3_mf2ua")
 
 [node name="gravityController" type="Node" parent="controllers" unique_id=1535713119]
 script = ExtResource("4_244u8")
+
+[node name="equipmentManager" type="Node" parent="controllers" unique_id=231949544]
+script = ExtResource("5_5f2sf")
+starting_equipment = ExtResource("6_jiejy")

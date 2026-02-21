@@ -13,6 +13,7 @@ class_name Player
 
 @onready var gravityController: GravityController = $controllers/gravityController
 @onready var movementController: MovementController = $controllers/movementController
+@onready var equipmentManager : EquipmentManager = $controllers/equipmentManager
 
 @export var arrowTexturePointsUp := true
 
@@ -33,8 +34,7 @@ class_name Player
 @export var supportNormalSmoothStep := 25.0     # bigger = snaps faster, smaller = smoother
 @export var supportNormalDeadzoneDeg := 0.35    # ignore tiny normal changes (degrees)
 @export var continuityWeight := 0.35            # 0..1, biases toward last normal
-
-var filteredSupportUp := Vector3.UP            # our de-noised normal
+@export var decayOfImpluse := 0.3
 # shared runtime state
 var pitch := 0.0
 var yaw := 0.0
@@ -42,33 +42,48 @@ var currentUp := Vector3.UP
 var supposedUp := Vector3.UP
 var attached := false
 var detachTimer := 0.0
-
+var preMoveVel := Vector3.ZERO
+var pendingImpulse := Vector3.ZERO
+var noStickTimer := 0.0
 
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	gravityController.setup(self, movementController)
 	movementController.setup(self, gravityController)
+	equipmentManager.setup(self, gravityController, movementController)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		yaw   -= event.relative.x * mouseSens
 		pitch -= event.relative.y * mouseSens
 		pitch = clamp(pitch, -pitchLimit, pitchLimit)
-
+	equipmentManager.handle_input(event)
 
 
 func _physics_process(delta: float) -> void:
 	gravityController.handleInteract()
 	gravityController.updateUpAxis(delta)
 	_updateCameraRig()
+	equipmentManager.tick(delta)
+
 	movementController.updatePlanarAndJump(delta)
+
+	velocity += pendingImpulse
+	pendingImpulse = Vector3.ZERO
+
 	gravityController.applyVerticalAccel(delta)
+
+	preMoveVel = velocity
 	move_and_slide()
+
+
 	gravityController.updateAttachmentAfterMove(delta)
 	gravityController.clampIntoFloor()
+
 	if Input.is_action_just_pressed("esc"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
+
 	_updateHudArrows()
 
 
@@ -118,3 +133,8 @@ func _screenArrowAngle(camRef: Camera3D, worldDir: Vector3) -> float:
 	var x := dProj.dot(right)
 	var y := dProj.dot(up)
 	return Vector2(x, -y).angle()
+
+
+
+func addImpulseWorld(imp: Vector3) -> void:
+	pendingImpulse += imp

@@ -1,0 +1,268 @@
+[gd_scene format=3 uid="uid://dgw74vsie3qck"]
+
+[ext_resource type="Script" uid="uid://dfuw5soldv2op" path="res://src/player/player.gd" id="1_ocv17"]
+[ext_resource type="Texture2D" uid="uid://3gflarj114ky" path="res://assets/lilTriangle.png" id="2_luur7"]
+[ext_resource type="Script" uid="uid://birf6yfalehau" path="res://src/player/controllers/equipment_controller.gd" id="5_5f2sf"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_5wqtk"]
+radius = 0.7
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_rxibo"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_244u8"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ocv17"]
+radius = 1.5
+
+[sub_resource type="GDScript" id="GDScript_mf2ua"]
+script/source = "extends Node
+class_name MovementController
+
+var player: Player
+var gravityController: GravityController
+
+func setup(p: Player, g: GravityController) -> void:
+	player = p
+	gravityController = g
+
+
+func updatePlanarAndJump(delta: float) -> void:
+	# --- input -> wish direction in the plane ⟂ currentUp ---
+	var v2 := Input.get_vector(\"ui_right\", \"ui_left\", \"ui_up\", \"ui_down\")
+	var strafe := v2.x
+	var forward := -v2.y
+
+	var camForward := (-player.pitchNode.global_transform.basis.z).normalized()
+	var fwd := camForward - player.currentUp * camForward.dot(player.currentUp)
+
+	if fwd.length() < 0.001:
+		var rigFwd := (-player.rigRoot.global_transform.basis.z).normalized()
+		fwd = rigFwd - player.currentUp * rigFwd.dot(player.currentUp)
+
+	fwd = fwd.normalized()
+	var right := player.currentUp.cross(fwd).normalized()
+
+	var wishDir := (right * strafe + fwd * forward)
+	if wishDir.length() > 1.0:
+		wishDir = wishDir.normalized()
+
+	# --- keep current vertical component, replace planar component ---
+	var vUp := player.velocity.dot(player.currentUp)
+	var planar := wishDir * player.speed
+	player.velocity = planar + player.currentUp * vUp
+
+	# --- jump (impulse along +currentUp) ---
+	if Input.is_action_just_pressed(\"ui_accept\") and player.is_on_floor():
+		vUp = player.jumpSpeed
+		player.velocity = planar + player.currentUp * vUp
+
+		# jumping from wall breaks attachment (your current behavior)
+		if player.attached:
+			gravityController.forceDetach()
+"
+
+[sub_resource type="GDScript" id="GDScript_244u8"]
+script/source = "extends Node
+class_name GravityController
+
+var player: Player
+var movementController: MovementController
+
+func setup(p: Player, m:MovementController) -> void:
+	player = p
+	movementController = m
+
+func handleInteract() -> void:
+	if not Input.is_action_just_pressed(\"interact\"): return
+	if player.attached: forceDetach()
+	else: tryAttachFromCamera()
+
+func forceDetach() -> void:
+	player.attached = false
+	player.supposedUp = Vector3.UP
+	player.detachTimer = 0.0
+
+func tryAttachFromCamera() -> void:
+	var origin := player.pitchNode.global_position
+	var dir := (-player.pitchNode.global_transform.basis.z).normalized()
+	var to := origin + dir * player.attachRange
+
+	var space := player.get_world_3d().direct_space_state
+	var q := PhysicsRayQueryParameters3D.create(origin, to)
+	q.exclude = [player.get_rid()] # Use RID for better reliability
+	var hit := space.intersect_ray(q)
+
+	if not hit.is_empty():
+		player.attached = true
+		player.supposedUp = (hit[\"normal\"] as Vector3).normalized()
+		player.detachTimer = 0.0
+
+func updateUpAxis(delta: float) -> void:
+	var t := 1.0 - exp(-player.rigReorientRate * delta)
+	# Smoothly interpolate the \"current\" up to the \"supposed\" up
+	player.currentUp = player.currentUp.lerp(player.supposedUp, t).normalized()
+
+	player.up_direction = player.currentUp
+	# Allow walking on any angle when attached
+	player.floor_max_angle = deg_to_rad(179.0 if player.attached else 45.0)
+
+func applyVerticalAccel(delta: float) -> void:
+	var vUp := player.velocity.dot(player.currentUp)
+
+	if player.attached:
+		# \"Suction\" force to keep you on walls
+		vUp -= player.stickStrength * delta
+		vUp = max(vUp, -player.maxStickSpeed)
+	elif not player.is_on_floor():
+		vUp -= player.gravityStrength * delta
+
+	var planar := player.velocity - player.currentUp * player.velocity.dot(player.currentUp)
+	player.velocity = planar + player.currentUp * vUp
+
+func updateAttachmentAfterMove(delta: float) -> void:
+	var supportN := Vector3.ZERO
+	if player.is_on_floor():
+		supportN = player.get_floor_normal().normalized()
+	else:
+		supportN = sampleSupportNormal()
+
+	if player.attached:
+		if supportN != Vector3.ZERO:
+			player.supposedUp = supportN
+			player.detachTimer = 0.0
+		else:
+			player.detachTimer += delta
+			if player.detachTimer > player.detachGrace:
+				forceDetach()
+	else:
+		player.supposedUp = Vector3.UP
+		if player.autoAttach:
+			var vUp_pre := player.preMoveVel.dot(player.currentUp)
+			var falling := (not player.is_on_floor()) and (vUp_pre < -0.1)
+			if falling:
+				var wallN := _bestWallFromSlideCollisions(player.preMoveVel)
+				if wallN != Vector3.ZERO:
+					player.attached = true
+					player.supposedUp = wallN
+					return
+			# Is the surface wall-like? (Normal horizontal-ish)
+
+			if supportN != Vector3.ZERO:
+				var wallLike := supportN.dot(Vector3.UP) < player.attachWallDot
+				var camFwd := (-player.pitchNode.global_transform.basis.z).normalized()
+				# Are we looking at it?
+				var facing := camFwd.dot(-supportN) > player.faceDot
+
+				if wallLike and facing:
+					player.attached = true
+					player.supposedUp = supportN
+
+func clampIntoFloor() -> void:
+	if player.attached or not player.is_on_floor(): return
+	var vUp := player.velocity.dot(player.currentUp)
+	if vUp < 0.0:
+		player.velocity -= player.currentUp * vUp
+
+func sampleSupportNormal() -> Vector3:
+	# Crucial: Cast the shape slightly \"down\" relative to player feet
+	player.downProbe.target_position = player.to_local(player.global_position - player.currentUp * 0.5)
+	player.downProbe.force_shapecast_update()
+
+	var bestN := Vector3.ZERO
+	var bestScore := -INF
+
+	for i in range(player.downProbe.get_collision_count()):
+		var n: Vector3 = player.downProbe.get_collision_normal(i).normalized()
+		# We want the surface most aligned with our feet
+		var score := n.dot(player.currentUp)
+		if score > bestScore:
+			bestScore = score
+			bestN = n
+	return bestN
+
+
+
+func _bestWallFromSlideCollisions(preVel: Vector3) -> Vector3:
+	var bestN := Vector3.ZERO
+	var bestScore := -INF
+
+	for i in range(player.get_slide_collision_count()):
+		var col := player.get_slide_collision(i)
+		var n := (col.get_normal() as Vector3).normalized()
+
+		# wall-like: normal is not \"up-ish\"
+		if n.dot(Vector3.UP) >= player.attachWallDot:
+			continue
+
+		# require we were moving into the surface (pre-move), not merely grazing
+		var approach := preVel.dot(-n)   # >0 means moving toward the wall
+		if approach < 0.25:
+			continue
+
+		if approach > bestScore:
+			bestScore = approach
+			bestN = n
+
+	return bestN
+"
+
+[node name="player" type="CharacterBody3D" unique_id=1256135889]
+script = ExtResource("1_ocv17")
+
+[node name="colShape" type="CollisionShape3D" parent="." unique_id=206197205]
+transform = Transform3D(0.9998321, 0.01832493, 0, -0.01832493, 0.9998321, 0, 0, 0, 1, 0, 0, 0)
+shape = SubResource("SphereShape3D_5wqtk")
+
+[node name="gravityControl" type="Node3D" parent="." unique_id=1950351932]
+
+[node name="yawAxis" type="Node3D" parent="gravityControl" unique_id=312281462]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5624272, 0)
+
+[node name="pitchAxis" type="Node3D" parent="gravityControl/yawAxis" unique_id=1714939760]
+
+[node name="Camera3D" type="Camera3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=1295936674]
+attributes = SubResource("CameraAttributesPractical_rxibo")
+current = true
+
+[node name="hand" type="Node3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=2094515691]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="gravityControl/yawAxis/pitchAxis/hand" unique_id=1546238678]
+transform = Transform3D(0.2345118, 0, 0, 0, 0.14221638, 0, 0, 0, 0.19706333, 0.47887957, -0.3177613, -0.4564395)
+mesh = SubResource("CylinderMesh_244u8")
+
+[node name="ShapeCast3D" type="ShapeCast3D" parent="." unique_id=1247176348]
+shape = SubResource("SphereShape3D_ocv17")
+target_position = Vector3(0, 0, 0)
+max_results = 6
+
+[node name="hud" type="CanvasLayer" parent="." unique_id=1258121793]
+
+[node name="wallIndicator" type="Sprite2D" parent="hud" unique_id=1274236181]
+modulate = Color(1, 0, 1, 1)
+position = Vector2(640, 328)
+rotation = 3.1415927
+scale = Vector2(0.36393684, 0.15787789)
+texture = ExtResource("2_luur7")
+offset = Vector2(0, -33.915)
+
+[node name="trueGroundIndicator" type="Sprite2D" parent="hud" unique_id=1159931306]
+modulate = Color(0, 1, 1, 1)
+position = Vector2(640, 352)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_luur7")
+
+[node name="Label" type="Label" parent="hud" unique_id=1278713410]
+offset_right = 133.0
+offset_bottom = 56.0
+text = "Text for hud"
+
+[node name="controllers" type="Node" parent="." unique_id=61257947]
+
+[node name="movementController" type="Node" parent="controllers" unique_id=1420186005]
+script = SubResource("GDScript_mf2ua")
+
+[node name="gravityController" type="Node" parent="controllers" unique_id=1535713119]
+script = SubResource("GDScript_244u8")
+
+[node name="equipmentManager" type="Node" parent="controllers" unique_id=231949544]
+script = ExtResource("5_5f2sf")

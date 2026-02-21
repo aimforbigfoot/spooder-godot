@@ -317,8 +317,6 @@ spinAxisLocal = Vector3(0, 0.5, 0.5)
 [node name="player" parent="." unique_id=1256135889 instance=ExtResource("4_42sgc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 17, 0)
 
-[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=2017314662]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 42, 27)
-light_energy = 40.774
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2141001175]
+transform = Transform3D(1, 0, 0, 0, -0.028427629, 0.9995959, 0, -0.9995959, -0.028427629, 0, 40.44395, 0)
 shadow_enabled = true
-omni_range = 210.0
