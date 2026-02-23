@@ -2,17 +2,30 @@
 
 [ext_resource type="Script" uid="uid://dfuw5soldv2op" path="res://src/player/player.gd" id="1_ocv17"]
 [ext_resource type="Texture2D" uid="uid://3gflarj114ky" path="res://assets/lilTriangle.png" id="2_luur7"]
+[ext_resource type="Material" uid="uid://c5dy73besbggw" path="res://assets/standardLight.tres" id="2_o822w"]
 [ext_resource type="Script" uid="uid://bvsffj61cut27" path="res://src/player/controllers/movement_controller.gd" id="3_mf2ua"]
 [ext_resource type="Script" uid="uid://bpk8jb2kd2tju" path="res://src/player/controllers/gravity_controller.gd" id="4_244u8"]
 [ext_resource type="Script" uid="uid://birf6yfalehau" path="res://src/player/controllers/equipment_manager.gd" id="5_5f2sf"]
 [ext_resource type="PackedScene" uid="uid://dljd5moqdoiw2" path="res://src/equipment/pushbackGun/pushback_gun.tscn" id="6_jiejy"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_5wqtk"]
-radius = 0.7
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_rxibo"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_244u8"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_8ydov"]
+radius = 0.25
+height = 0.5
+
+[sub_resource type="SphereMesh" id="SphereMesh_x42xx"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l271a"]
+albedo_color = Color(0, 1, 1, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_o822w"]
+radius = 0.285
+height = 1.07
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_ocv17"]
 radius = 1.5
@@ -45,11 +58,12 @@ shape = SubResource("SphereShape3D_5wqtk")
 [node name="gravityControl" type="Node3D" parent="." unique_id=1950351932]
 
 [node name="yawAxis" type="Node3D" parent="gravityControl" unique_id=312281462]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5624272, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4029261, 0)
 
 [node name="pitchAxis" type="Node3D" parent="gravityControl/yawAxis" unique_id=1714939760]
 
 [node name="Camera3D" type="Camera3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=1295936674]
+cull_mask = 1048573
 attributes = SubResource("CameraAttributesPractical_rxibo")
 current = true
 
@@ -58,6 +72,43 @@ current = true
 [node name="MeshInstance3D" type="MeshInstance3D" parent="gravityControl/yawAxis/pitchAxis/handSocket" unique_id=1546238678]
 transform = Transform3D(0.2345118, 0, 0, 0, -0.0043554795, 0.19697088, 0, -0.14214966, -0.0060352064, 0.47887957, -0.3177613, -0.4564395)
 mesh = SubResource("CylinderMesh_244u8")
+
+[node name="eyeNodes" type="Node3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=386874624]
+transform = Transform3D(1, 0, 0, 0, 0.8975587, -0.44089502, 0, 0.44089502, 0.8975587, 0, -0.09568104, -0.002609998)
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="gravityControl/yawAxis/pitchAxis/eyeNodes" unique_id=220410084]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22069106, 0, -0.050337553)
+layers = 2
+material_override = ExtResource("2_o822w")
+mesh = SubResource("SphereMesh_8ydov")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="gravityControl/yawAxis/pitchAxis/eyeNodes" unique_id=1871214810]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2058326, 0, -0.053824335)
+layers = 2
+material_override = ExtResource("2_o822w")
+mesh = SubResource("SphereMesh_8ydov")
+
+[node name="bodyNodes" type="Node3D" parent="gravityControl/yawAxis" unique_id=960477973]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4029261, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="gravityControl/yawAxis/bodyNodes" unique_id=455653860]
+mesh = SubResource("SphereMesh_x42xx")
+surface_material_override/0 = SubResource("StandardMaterial3D_l271a")
+
+[node name="feetNodes" type="Node3D" parent="gravityControl/yawAxis" unique_id=1116897207]
+transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, -0.8348229, -0.094097674)
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="gravityControl/yawAxis/feetNodes" unique_id=1078007618]
+transform = Transform3D(1, 0, 0, 0, -4.4703484e-08, -1.0000001, 0, 1.0000001, -4.4703484e-08, 0.22069106, 0.047830224, 0.056045607)
+layers = 2
+material_override = ExtResource("2_o822w")
+mesh = SubResource("CapsuleMesh_o822w")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="gravityControl/yawAxis/feetNodes" unique_id=963616664]
+transform = Transform3D(1, 0, 0, 0, -4.4703484e-08, -1.0000001, 0, 1.0000001, -4.4703484e-08, -0.32663628, 0.047830194, 0.056045547)
+layers = 2
+material_override = ExtResource("2_o822w")
+mesh = SubResource("CapsuleMesh_o822w")
 
 [node name="ShapeCast3D" type="ShapeCast3D" parent="." unique_id=1247176348]
 shape = SubResource("SphereShape3D_ocv17")
