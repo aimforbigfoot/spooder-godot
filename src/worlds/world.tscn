@@ -4,6 +4,7 @@
 [ext_resource type="Material" uid="uid://c5dy73besbggw" path="res://assets/standardLight.tres" id="2_42sgc"]
 [ext_resource type="PackedScene" uid="uid://bjknx8fnw0f7o" path="res://src/worldObjs/dynamic/movingPlatform/moving_platform.tscn" id="3_42sgc"]
 [ext_resource type="PackedScene" uid="uid://dgw74vsie3qck" path="res://src/player/player.tscn" id="4_42sgc"]
+[ext_resource type="Texture2D" uid="uid://b2oasnu7wg1ku" path="res://assets/texture_10.png" id="4_ai5wj"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0qwtu"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -81,6 +82,19 @@ size = Vector2(100, 100)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ai5wj"]
 size = Vector3(100, 0.001, 100)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xuon0"]
+radius = 5.0
+height = 22.314209
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qfi0n"]
+albedo_texture = ExtResource("4_ai5wj")
+uv1_triplanar = true
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_xmwf4"]
+material = SubResource("StandardMaterial3D_qfi0n")
+radius = 5.0
+height = 22.889
 
 [node name="world" type="Node3D" unique_id=294104220]
 
@@ -303,6 +317,23 @@ canSpin = true
 spinSpeedDeg = 10.0
 spinAxisLocal = Vector3(2.555, 1, 0)
 
+[node name="movingPlatform6" parent="blocks" unique_id=521164927 instance=ExtResource("3_42sgc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 38.619793, -46.24227)
+pointA = Vector3(0, 1, -1.54)
+pointB = Vector3(-8.59, 16, 14.02)
+moveSpeed = 10.0
+canSpin = true
+spinCw = false
+spinSpeedDeg = 67.41
+spinAxisLocal = Vector3(0, 0.5, 0.5)
+
+[node name="CollisionShape3D" parent="blocks/movingPlatform6/AnimatableBody3D" parent_id_path=PackedInt32Array(521164927, 953270121) index="0" unique_id=1688150476]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.44250488, 0)
+shape = SubResource("CapsuleShape3D_xuon0")
+
+[node name="MeshInstance3D" parent="blocks/movingPlatform6/AnimatableBody3D" parent_id_path=PackedInt32Array(521164927, 953270121) index="1" unique_id=1941395077]
+mesh = SubResource("CapsuleMesh_xmwf4")
+
 [node name="movingPlatform4" parent="blocks" unique_id=1831474320 instance=ExtResource("3_42sgc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 26, -5)
 canSpin = true
@@ -320,3 +351,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 17, 0)
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2141001175]
 transform = Transform3D(1, 0, 0, 0, -0.028427629, 0.9995959, 0, -0.9995959, -0.028427629, 0, 40.44395, 0)
 shadow_enabled = true
+
+[editable path="blocks/movingPlatform6"]
