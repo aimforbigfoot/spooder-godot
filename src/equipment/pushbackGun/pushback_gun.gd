@@ -2,9 +2,8 @@ extends Equipment
 class_name PushbackGun
 
 @export var range := 40.0
-@export var recoilImpulse := 30.0
+@export var recoilImpulse := -30.0
 @export var cooldown := 0.12
-
 @export var recoilPlanarRelativeToUp := false   # <- key switch
 
 var fireQueued := false
