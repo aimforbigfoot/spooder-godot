@@ -19,6 +19,24 @@ radius = 1.5
 
 [node name="player" type="CharacterBody3D" unique_id=1256135889]
 script = ExtResource("1_ocv17")
+arrowTexturePointsUp = null
+rigReorientRate = null
+speed = null
+gravityStrength = null
+stickStrength = null
+maxStickSpeed = null
+jumpSpeed = null
+mouseSens = null
+attachRange = null
+pitchLimit = null
+autoAttach = null
+attachWallDot = null
+faceDot = null
+detachGrace = null
+supportNormalSmoothStep = null
+supportNormalDeadzoneDeg = null
+continuityWeight = null
+decayOfImpluse = null
 
 [node name="colShape" type="CollisionShape3D" parent="." unique_id=206197205]
 transform = Transform3D(0.9998321, 0.01832493, 0, -0.01832493, 0.9998321, 0, 0, 0, 1, 0, 0, 0)
@@ -38,7 +56,7 @@ current = true
 [node name="handSocket" type="Node3D" parent="gravityControl/yawAxis/pitchAxis" unique_id=2094515691]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="gravityControl/yawAxis/pitchAxis/handSocket" unique_id=1546238678]
-transform = Transform3D(0.2345118, 0, 0, 0, 0.14221638, 0, 0, 0, 0.19706333, 0.47887957, -0.3177613, -0.4564395)
+transform = Transform3D(0.2345118, 0, 0, 0, -0.0043554795, 0.19697088, 0, -0.14214966, -0.0060352064, 0.47887957, -0.3177613, -0.4564395)
 mesh = SubResource("CylinderMesh_244u8")
 
 [node name="ShapeCast3D" type="ShapeCast3D" parent="." unique_id=1247176348]

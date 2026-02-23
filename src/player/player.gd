@@ -45,7 +45,7 @@ var detachTimer := 0.0
 var preMoveVel := Vector3.ZERO
 var pendingImpulse := Vector3.ZERO
 var noStickTimer := 0.0
-
+var justForceAttached := false
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -64,19 +64,49 @@ func _input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	gravityController.handleInteract()
 	gravityController.updateUpAxis(delta)
-	_updateCameraRig()
 	equipmentManager.tick(delta)
 
 	movementController.updatePlanarAndJump(delta)
 
-	velocity += pendingImpulse
-	pendingImpulse = Vector3.ZERO
+
 
 	gravityController.applyVerticalAccel(delta)
+
+
+	var imp := movementController.consumeUnsafeImpulse()
+	if imp != Vector3.ZERO:
+		# carry it into the "external" channel so planar steering won't kill it next frame
+		movementController.addExternalKickWorld(imp)
+		# explicit unsafe injection (your requested point)
+		velocity += imp
+
 
 	preMoveVel = velocity
 	move_and_slide()
 
+
+	_updateCameraRig()
+
+	# ---- break external recoil if we collide into something ----
+# ---- recoil impact: stop/slide external + force-attach to contacted surface ----
+	if movementController.externalVel != Vector3.ZERO and get_slide_collision_count() > 0:
+		var ext := movementController.externalVel
+		var bestN := Vector3.ZERO
+		var bestPush := 0.0
+
+		for i in range(get_slide_collision_count()):
+			var n := (get_slide_collision(i).get_normal() as Vector3).normalized()
+			var push := -ext.dot(n)
+			if push > bestPush:
+				bestPush = push
+				bestN = n
+
+		if bestPush > 0.05 and bestN != Vector3.ZERO:
+			movementController.clearExternalKick()
+			velocity = velocity.slide(bestN)
+
+			gravityController.forceAttachToNormal(bestN)
+			justForceAttached = true
 
 	gravityController.updateAttachmentAfterMove(delta)
 	gravityController.clampIntoFloor()
@@ -137,4 +167,10 @@ func _screenArrowAngle(camRef: Camera3D, worldDir: Vector3) -> float:
 
 
 func addImpulseWorld(imp: Vector3) -> void:
-	pendingImpulse += imp
+	movementController.addExternalKickWorld(imp)
+
+
+func addImpulseWorldUnsafe(imp: Vector3) -> void:
+	movementController.addUnsafeImpulseWorld(imp)
+
+

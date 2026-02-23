@@ -2,15 +2,10 @@ extends Equipment
 class_name PushbackGun
 
 @export var range := 40.0
-@export var hitImpulse := 25.0         # impulse applied to rigidbodies
-@export var recoilImpulse := 30.0       # impulse applied to player (opposite shot dir)
+@export var recoilImpulse := 30.0
 @export var cooldown := 0.12
 
-@export var gravityKick := 80.0         # optional: extra gravity strength
-@export var gravityKickTime := 0.08    # optional duration
-
-@export var blastNormalImpulse := 18.0   # pop off surface
-@export var blastOnlyWhenSupported := true
+@export var recoilPlanarRelativeToUp := false   # <- key switch
 
 var fireQueued := false
 var cd := 0.0
@@ -27,31 +22,22 @@ func tick(delta: float) -> void:
 		_fire()
 
 func _fire() -> void:
-	var origin := player.cam.global_position
-	var dir := (-player.cam.global_transform.basis.z).normalized()
-	var to := origin + dir * range
+	var up := player.currentUp.normalized()
+	var camFwd := (-player.cam.global_transform.basis.z).normalized()
 
-	var space := player.get_world_3d().direct_space_state
-	var q := PhysicsRayQueryParameters3D.create(origin, to)
-	q.exclude = [player.get_rid()]
-	var hit := space.intersect_ray(q)
-
-	var u := player.currentUp.normalized()
-	var v := -dir * recoilImpulse
-	var v_vert := u * v.dot(u)
-	var v_plan := v - v_vert
-	print("vert=", v_vert.length(), " planar=", v_plan.length(), " dot=", v.normalized().dot(u))
+	var shotDir := camFwd
+	if recoilPlanarRelativeToUp:
+		var planar := camFwd - up * camFwd.dot(up)
+		if planar.length() > 0.001:
+			shotDir = planar.normalized()
 
 	if player.attached:
 		player.noStickTimer = 0.08
 		player.gravityController.forceDetach()
-	player.addImpulseWorld(-dir * recoilImpulse)
 
-	# optional gravity hook (this is separate from blast-off)
-	#if gravityKick > 0.0 and gravityKickTime > 0.0:
-		#player.gravityController.addExtraGravity(gravityKick, gravityKickTime)
+	# UNSAFE: injected after movement+gravity, right before move_and_slide
+	player.addImpulseWorldUnsafe(-shotDir * recoilImpulse)
 
-
-	if hit.is_empty():
-		return
-
+	var pushbackexplisionparts := preload("res://src/equipment/pushbackGun/push_back_explosion.tscn").instantiate()
+	get_tree().root.add_child(pushbackexplisionparts)
+	pushbackexplisionparts.global_position = $MeshInstance3D/gunPartSpot.global_position

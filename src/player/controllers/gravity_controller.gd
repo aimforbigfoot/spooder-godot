@@ -45,16 +45,20 @@ func updateUpAxis(delta: float) -> void:
 	# Allow walking on any angle when attached
 	player.floor_max_angle = deg_to_rad(179.0 if player.attached else 45.0)
 
+
 func applyVerticalAccel(delta: float) -> void:
-	var vUp := player.velocity.dot(player.currentUp)
+	var up := player.currentUp.normalized()
+	# exclude pushback from gravity/stick
+	var ext := movementController.externalVel
+	var baseVel := player.velocity - ext
+
+	var vUp := baseVel.dot(up)
 
 	if player.attached:
-		# "Suction" force to keep you on walls
 		vUp -= player.stickStrength * delta
 		vUp = max(vUp, -player.maxStickSpeed)
 	elif not player.is_on_floor():
 		vUp -= player.gravityStrength * delta
-
 
 	if extraGravityTimer > 0.0:
 		vUp -= extraGravityStrength * delta
@@ -63,10 +67,15 @@ func applyVerticalAccel(delta: float) -> void:
 			extraGravityStrength = 0.0
 			extraGravityTimer = 0.0
 
-	var planar := player.velocity - player.currentUp * player.velocity.dot(player.currentUp)
-	player.velocity = planar + player.currentUp * vUp
+	var planar := baseVel - up * baseVel.dot(up)
+	player.velocity = planar + up * vUp + ext
+
+
 
 func updateAttachmentAfterMove(delta: float) -> void:
+	if player.justForceAttached:
+		player.justForceAttached = false
+		return
 	var supportN := Vector3.ZERO
 	if player.is_on_floor():
 		supportN = player.get_floor_normal().normalized()
@@ -106,10 +115,16 @@ func updateAttachmentAfterMove(delta: float) -> void:
 
 func clampIntoFloor() -> void:
 	if player.attached or not player.is_on_floor(): return
-	if player.gravityController.extraGravityTimer > 0.0: return  # let the kick “bite”
-	var vUp := player.velocity.dot(player.currentUp)
+	if player.gravityController.extraGravityTimer > 0.0: return
+	var up := player.currentUp.normalized()
+	var ext := movementController.externalVel
+	var baseVel := player.velocity - ext
+
+	var vUp := baseVel.dot(up)
 	if vUp < 0.0:
-		player.velocity -= player.currentUp * vUp
+		baseVel -= up * vUp
+
+	player.velocity = baseVel + ext
 
 func sampleSupportNormal() -> Vector3:
 	# Crucial: Cast the shape slightly "down" relative to player feet
@@ -154,6 +169,7 @@ func _bestWallFromSlideCollisions(preVel: Vector3) -> Vector3:
 	return bestN
 
 
-func addExtraGravity(strength: float, duration: float) -> void:
-	extraGravityStrength = max(extraGravityStrength, strength)
-	extraGravityTimer = max(extraGravityTimer, duration)
+func forceAttachToNormal(n: Vector3) -> void:
+	player.attached = true
+	player.supposedUp = n.normalized()
+	player.detachTimer = 0.0
